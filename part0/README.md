@@ -1,6 +1,18 @@
+# Full Stack Open - Part 0 Submission
+
+This repository contains my submissions for Part 0 of the Full Stack Open course.
+
+## Exercises 0.1 - 0.3 (Reading Tasks)
+
+* [x] **0.1: HTML** - Completed reading the Mozilla HTML tutorial.
+* [x] **0.2: CSS** - Completed reading the Mozilla CSS tutorial.
+* [x] **0.3: HTML Forms** - Completed reading the Mozilla HTML Forms tutorial.
+
+---
+
 ## Exercise 0.4: New Note Diagram (Traditional App)
 
-[cite_start]This diagram illustrates the sequence of HTTP requests and events that occur when a user submits a new note on the traditional notes page[cite: 1965, 1966].
+This diagram illustrates the sequence of HTTP requests and events that occur when a user submits a new note on the traditional notes page.
 
 ```mermaid
 sequenceDiagram
@@ -46,7 +58,7 @@ sequenceDiagram
 
 ## Exercise 0.5: Single Page App Diagram
 
-[cite_start]This diagram shows the sequence of requests when a user first visits the Single Page App (SPA) version of the notes tool[cite: 1973].
+This diagram shows the sequence of requests when a user first visits the Single Page App (SPA) version of the notes tool.
 
 ```mermaid
 sequenceDiagram
@@ -82,7 +94,7 @@ sequenceDiagram
 
 ## Exercise 0.6: New Note in Single Page App Diagram
 
-[cite_start]This diagram details what happens when a user creates a new note in the SPA[cite: 1974]. [cite_start]Notice that there is only one background HTTP POST request, and no screen reloads are needed[cite: 1974].
+This diagram details what happens when a user creates a new note in the SPA. Notice that there is only one background HTTP POST request, and no screen reloads are needed.
 
 ```mermaid
 sequenceDiagram
