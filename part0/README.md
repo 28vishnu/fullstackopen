@@ -8,7 +8,7 @@ sequenceDiagram
 
     Note over browser: User types a new note in the text box and clicks "Save"
 
-    browser->>server: POST [https://studies.cs.helsinki.fi/exampleapp/new_note](https://studies.cs.helsinki.fi/exampleapp/new_note)
+    browser->>server: POST https://studies.cs.helsinki.fi/exampleapp/new_note
     activate server
     Note over server: Server extracts the text, creates a note object, and adds it to the notes array
     server-->>browser: HTTP Status 302 (Redirect to /notes)
@@ -16,24 +16,24 @@ sequenceDiagram
 
     Note over browser: The 302 Redirect forces the browser to completely reload the notes page
 
-    browser->>server: GET [https://studies.cs.helsinki.fi/exampleapp/notes](https://studies.cs.helsinki.fi/exampleapp/notes)
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/notes
     activate server
     server-->>browser: HTML document
     deactivate server
 
-    browser->>server: GET [https://studies.cs.helsinki.fi/exampleapp/main.css](https://studies.cs.helsinki.fi/exampleapp/main.css)
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/main.css
     activate server
     server-->>browser: the CSS file
     deactivate server
 
-    browser->>server: GET [https://studies.cs.helsinki.fi/exampleapp/main.js](https://studies.cs.helsinki.fi/exampleapp/main.js)
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/main.js
     activate server
     server-->>browser: the JavaScript file
     deactivate server
 
     Note right of browser: The browser starts executing the JavaScript code that fetches the JSON from the server
 
-    browser->>server: GET [https://studies.cs.helsinki.fi/exampleapp/data.json](https://studies.cs.helsinki.fi/exampleapp/data.json)
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/data.json
     activate server
     server-->>browser: [{ "content": "My traditional note", "date": "2026-06-17" }, ... ]
     deactivate server
@@ -49,24 +49,24 @@ sequenceDiagram
     participant browser
     participant server
 
-    browser->>server: GET [https://studies.cs.helsinki.fi/exampleapp/spa](https://studies.cs.helsinki.fi/exampleapp/spa)
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/spa
     activate server
     server-->>browser: HTML document
     deactivate server
 
-    browser->>server: GET [https://studies.cs.helsinki.fi/exampleapp/main.css](https://studies.cs.helsinki.fi/exampleapp/main.css)
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/main.css
     activate server
     server-->>browser: the CSS file
     deactivate server
 
-    browser->>server: GET [https://studies.cs.helsinki.fi/exampleapp/spa.js](https://studies.cs.helsinki.fi/exampleapp/spa.js)
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/spa.js
     activate server
     server-->>browser: the JavaScript file
     deactivate server
 
     Note right of browser: The browser executes the spa.js script, which initiates a request for JSON data
 
-    browser->>server: GET [https://studies.cs.helsinki.fi/exampleapp/data.json](https://studies.cs.helsinki.fi/exampleapp/data.json)
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/data.json
     activate server
     server-->>browser: [{ "content": "SPA Load Test", "date": "2026-06-17" }, ... ]
     deactivate server
@@ -86,7 +86,7 @@ sequenceDiagram
     Note right of browser: Local JavaScript intercepts the submit event to stop page reloads (e.preventDefault())
     Note right of browser: JavaScript immediately adds the note to the local list and updates the DOM
 
-    browser->>server: POST [https://studies.cs.helsinki.fi/exampleapp/new_note_spa](https://studies.cs.helsinki.fi/exampleapp/new_note_spa)
+    browser->>server: POST https://studies.cs.helsinki.fi/exampleapp/new_note_spa
     activate server
     Note over server: Server receives the note JSON data and updates the array
     server-->>browser: HTTP Status 201 (Created)
