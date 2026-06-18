@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
+import axios from 'axios' // Import axios to perform GET requests (Exercise 2.11)
 
-// Filter component handles the search input (Exercise 2.10)
+// Filter component handles the search input
 const Filter = ({ value, onChange }) => {
   return (
     <div>
@@ -10,7 +11,7 @@ const Filter = ({ value, onChange }) => {
   )
 }
 
-// PersonForm component handles adding new contacts (Exercise 2.10)
+// PersonForm component handles adding new contacts
 const PersonForm = ({ onSubmit, nameValue, onNameChange, numberValue, onNumberChange }) => {
   return (
     <form onSubmit={onSubmit}>
@@ -27,7 +28,7 @@ const PersonForm = ({ onSubmit, nameValue, onNameChange, numberValue, onNumberCh
   )
 }
 
-// Persons component lists out filtered contacts (Exercise 2.10)
+// Persons component lists out filtered contacts
 const Persons = ({ personsToShow }) => {
   return (
     <div>
@@ -41,40 +42,42 @@ const Persons = ({ personsToShow }) => {
 }
 
 const App = () => {
-  // Hardcoded dummy data for testing filtering out-of-the-box (Exercise 2.9)
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456', id: 'Arto Hellas' },
-    { name: 'Ada Lovelace', number: '39-44-5323523', id: 'Ada Lovelace' },
-    { name: 'Dan Abramov', number: '12-43-234345', id: 'Dan Abramov' },
-    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 'Mary Poppendieck' }
-  ])
-
-  // Controlled component states
+  // Initialize with an empty array. Data will be populated from the server (Exercise 2.11)
+  const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filterQuery, setFilterQuery] = useState('')
   const [errorMessage, setErrorMessage] = useState(null)
+
+  // Use the Effect hook to fetch data asynchronously on the initial render (Exercise 2.11)
+  useEffect(() => {
+    axios
+      .get('http://localhost:3001/persons')
+      .then(response => {
+        setPersons(response.data)
+      })
+  }, []) // Empty dependency array ensures this effect runs only once
 
   // Sync state with name input changes
   const handleNameChange = (event) => {
     setNewName(event.target.value)
   }
 
-  // Sync state with number input changes (Exercise 2.8)
+  // Sync state with number input changes
   const handleNumberChange = (event) => {
     setNewNumber(event.target.value)
   }
 
-  // Sync state with search input changes (Exercise 2.9)
+  // Sync state with search input changes
   const handleFilterChange = (event) => {
     setFilterQuery(event.target.value)
   }
 
-  // Handle adding/submitting a new contact
+  // Handle adding/submitting a new contact locally
   const addPerson = (event) => {
     event.preventDefault()
 
-    // Check if the person is already registered (Exercise 2.7)
+    // Check if the person is already registered
     const duplicateCheck = persons.some(
       (person) => person.name.toLowerCase() === newName.toLowerCase()
     )
@@ -97,7 +100,7 @@ const App = () => {
     setNewNumber('')
   }
 
-  // Filter persons dynamically based on search terms (Exercise 2.9)
+  // Filter persons dynamically based on search terms
   const personsToShow = filterQuery === ''
     ? persons
     : persons.filter(person => 
