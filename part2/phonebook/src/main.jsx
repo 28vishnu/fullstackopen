@@ -4,44 +4,61 @@ import axios from 'axios'
 
 const baseUrl = 'http://localhost:3001/persons'
 
-// --- BACKEND SERVICE MODULE (Exercise 2.13) ---
-// We extract our API communications into a distinct, clean service layer.
-// This fulfills the "Single Responsibility Principle" in a single-file environment.
+// --- BACKEND SERVICE MODULE ---
 const personService = {
-  getAll: () => {
-    return axios.get(baseUrl).then(response => response.data)
-  },
-  create: (newObject) => {
-    return axios.post(baseUrl, newObject).then(response => response.data)
-  },
-  update: (id, newObject) => {
-    return axios.put(`${baseUrl}/${id}`, newObject).then(response => response.data)
-  },
-  remove: (id) => {
-    return axios.delete(`${baseUrl}/${id}`).then(response => response.data)
-  }
+  getAll: () => axios.get(baseUrl).then(response => response.data),
+  create: (newObject) => axios.post(baseUrl, newObject).then(response => response.data),
+  update: (id, newObject) => axios.put(`${baseUrl}/${id}`, newObject).then(response => response.data),
+  remove: (id) => axios.delete(`${baseUrl}/${id}`).then(response => response.data)
 }
 
-// --- SUB-COMPONENTS (Exercise 2.10 Refactoring) ---
+// --- NOTIFICATION COMPONENT ---
+const Notification = ({ notification }) => {
+  if (notification === null) {
+    return null
+  }
+
+  const { message, type } = notification
+
+  const notificationStyle = {
+    color: type === 'error' ? '#991b1b' : '#065f46',
+    background: type === 'error' ? '#fee2e2' : '#ecfdf5',
+    fontSize: '16px',
+    border: `2px solid ${type === 'error' ? '#f87171' : '#34d399'}`,
+    borderRadius: '6px',
+    padding: '12px',
+    marginBottom: '20px',
+    fontWeight: 'bold',
+    transition: 'all 0.3s ease'
+  }
+
+  return (
+    <div style={notificationStyle}>
+      {message}
+    </div>
+  )
+}
+
+// --- SUB-COMPONENTS ---
 const Filter = ({ value, onChange }) => {
   return (
-    <div>
-      filter shown with <input value={value} onChange={onChange} />
+    <div style={{ marginBottom: '15px' }}>
+      filter shown with <input value={value} onChange={onChange} style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc' }} />
     </div>
   )
 }
 
 const PersonForm = ({ onSubmit, nameValue, onNameChange, numberValue, onNumberChange }) => {
   return (
-    <form onSubmit={onSubmit}>
+    <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px' }}>
       <div>
-        name: <input value={nameValue} onChange={onNameChange} />
+        name: <input value={nameValue} onChange={onNameChange} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }} />
       </div>
       <div>
-        number: <input value={numberValue} onChange={onNumberChange} />
+        number: <input value={numberValue} onChange={onNumberChange} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }} />
       </div>
       <div>
-        <button type="submit">add</button>
+        <button type="submit" style={{ padding: '6px 12px', cursor: 'pointer', background: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}>add</button>
       </div>
     </form>
   )
@@ -51,28 +68,29 @@ const Persons = ({ personsToShow, onDelete }) => {
   return (
     <div>
       {personsToShow.map(person => (
-        <p key={person.id} style={{ margin: '8px 0', display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div key={person.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
           <span>{person.name} {person.number}</span>
           <button 
             onClick={() => onDelete(person.id, person.name)}
             style={{
-              padding: '2px 8px',
+              padding: '4px 8px',
               cursor: 'pointer',
               background: '#ef4444',
               color: 'white',
               border: 'none',
-              borderRadius: '4px'
+              borderRadius: '4px',
+              fontSize: '13px'
             }}
           >
             delete
           </button>
-        </p>
+        </div>
       ))}
     </div>
   )
 }
 
-// --- MAIN APPLICATION COMPONENT ---
+// --- MAIN COMPONENT ---
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
@@ -80,56 +98,52 @@ const App = () => {
   const [filterQuery, setFilterQuery] = useState('')
   const [notification, setNotification] = useState(null)
 
-  // Load the initial contact database on page mount (Exercise 2.11)
   useEffect(() => {
     personService
       .getAll()
       .then(initialPersons => {
         setPersons(initialPersons)
       })
-      .catch(error => {
-        showNotification('Failed to fetch data from server', 'error')
+      .catch(() => {
+        showNotification('Failed to fetch initial contacts from database', 'error')
       })
   }, [])
 
-  // Helper to show modern status/alert notifications
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type })
-    setTimeout(() => setNotification(null), 5000)
+    setTimeout(() => {
+      setNotification(null)
+    }, 5000)
   }
 
   const handleNameChange = (event) => setNewName(event.target.value)
   const handleNumberChange = (event) => setNewNumber(event.target.value)
   const handleFilterChange = (event) => setFilterQuery(event.target.value)
 
-  // Handle Form Submission: Create or Update (Exercises 2.12 & 2.15)
   const addPerson = (event) => {
     event.preventDefault()
 
-    // Search for existing entries matching the input name (case-insensitive)
     const existingPerson = persons.find(
       (person) => person.name.toLowerCase() === newName.toLowerCase()
     )
 
     if (existingPerson) {
-      // Exercise 2.15*: If the user already exists, offer to update the phone number
       const confirmUpdate = window.confirm(
-        `${newName} is already added to the phonebook, replace the old number with a new one?`
+        `${newName} is already added to phonebook, replace the old number with a new one?`
       )
 
       if (confirmUpdate) {
-        const updatedPersonObject = { ...existingPerson, number: newNumber }
+        const updatedPerson = { ...existingPerson, number: newNumber }
 
         personService
-          .update(existingPerson.id, updatedPersonObject)
+          .update(existingPerson.id, updatedPerson)
           .then(returnedPerson => {
             setPersons(persons.map(p => p.id === existingPerson.id ? returnedPerson : p))
-            showNotification(`Updated ${returnedPerson.name}'s phone number`)
+            showNotification(`Updated number for ${returnedPerson.name}`)
             setNewName('')
             setNewNumber('')
           })
-          .catch(error => {
-            // Handle error cases like if another user deleted the contact first
+          .catch(() => {
             showNotification(
               `Information of '${existingPerson.name}' has already been removed from server`,
               'error'
@@ -140,11 +154,7 @@ const App = () => {
       return
     }
 
-    // Exercise 2.12: If it's a new name, perform an HTTP POST request
-    const newPersonObject = {
-      name: newName,
-      number: newNumber
-    }
+    const newPersonObject = { name: newName, number: newNumber }
 
     personService
       .create(newPersonObject)
@@ -154,12 +164,11 @@ const App = () => {
         setNewName('')
         setNewNumber('')
       })
-      .catch(error => {
-        showNotification('Failed to add new contact', 'error')
+      .catch(() => {
+        showNotification('Failed to save the new contact on server', 'error')
       })
   }
 
-  // Handle Deletion (Exercise 2.14)
   const deletePersonOf = (id, name) => {
     const confirmDelete = window.confirm(`Delete ${name}?`)
     
@@ -168,16 +177,15 @@ const App = () => {
         .remove(id)
         .then(() => {
           setPersons(persons.filter(p => p.id !== id))
-          showNotification(`Deleted ${name}`)
+          showNotification(`Removed ${name} successfully`)
         })
-        .catch(error => {
+        .catch(() => {
           showNotification(`The contact '${name}' was already deleted from server`, 'error')
           setPersons(persons.filter(p => p.id !== id))
         })
     }
   }
 
-  // Filter contacts dynamically based on user input
   const personsToShow = filterQuery === ''
     ? persons
     : persons.filter(person => 
@@ -185,26 +193,11 @@ const App = () => {
       )
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+    <div style={{ fontFamily: 'sans-serif', padding: '25px', maxWidth: '500px', margin: '20px auto', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
       <h2>Phonebook</h2>
-
-      {/* Elegant Custom Status Notification Overlay */}
-      {notification && (
-        <div style={{
-          background: notification.type === 'error' ? '#fee2e2' : '#ecfdf5',
-          border: `1px solid ${notification.type === 'error' ? '#f87171' : '#34d399'}`,
-          color: notification.type === 'error' ? '#991b1b' : '#065f46',
-          padding: '12px',
-          borderRadius: '6px',
-          marginBottom: '20px',
-          fontWeight: 'bold'
-        }}>
-          {notification.message}
-        </div>
-      )}
-
+      <Notification notification={notification} />
       <Filter value={filterQuery} onChange={handleFilterChange} />
-
+      
       <h3>Add a new</h3>
       <PersonForm 
         onSubmit={addPerson} 
