@@ -1,8 +1,28 @@
 import React, { useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import axios from 'axios' // Import axios to perform GET requests (Exercise 2.11)
+import axios from 'axios'
 
-// Filter component handles the search input
+const baseUrl = 'http://localhost:3001/persons'
+
+// --- BACKEND SERVICE MODULE (Exercise 2.13) ---
+// We extract our API communications into a distinct, clean service layer.
+// This fulfills the "Single Responsibility Principle" in a single-file environment.
+const personService = {
+  getAll: () => {
+    return axios.get(baseUrl).then(response => response.data)
+  },
+  create: (newObject) => {
+    return axios.post(baseUrl, newObject).then(response => response.data)
+  },
+  update: (id, newObject) => {
+    return axios.put(`${baseUrl}/${id}`, newObject).then(response => response.data)
+  },
+  remove: (id) => {
+    return axios.delete(`${baseUrl}/${id}`).then(response => response.data)
+  }
+}
+
+// --- SUB-COMPONENTS (Exercise 2.10 Refactoring) ---
 const Filter = ({ value, onChange }) => {
   return (
     <div>
@@ -11,7 +31,6 @@ const Filter = ({ value, onChange }) => {
   )
 }
 
-// PersonForm component handles adding new contacts
 const PersonForm = ({ onSubmit, nameValue, onNameChange, numberValue, onNumberChange }) => {
   return (
     <form onSubmit={onSubmit}>
@@ -28,79 +47,137 @@ const PersonForm = ({ onSubmit, nameValue, onNameChange, numberValue, onNumberCh
   )
 }
 
-// Persons component lists out filtered contacts
-const Persons = ({ personsToShow }) => {
+const Persons = ({ personsToShow, onDelete }) => {
   return (
     <div>
       {personsToShow.map(person => (
-        <p key={person.id} style={{ margin: '5px 0' }}>
-          {person.name} {person.number}
+        <p key={person.id} style={{ margin: '8px 0', display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <span>{person.name} {person.number}</span>
+          <button 
+            onClick={() => onDelete(person.id, person.name)}
+            style={{
+              padding: '2px 8px',
+              cursor: 'pointer',
+              background: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px'
+            }}
+          >
+            delete
+          </button>
         </p>
       ))}
     </div>
   )
 }
 
+// --- MAIN APPLICATION COMPONENT ---
 const App = () => {
-  // Initialize with an empty array. Data will be populated from the server (Exercise 2.11)
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filterQuery, setFilterQuery] = useState('')
-  const [errorMessage, setErrorMessage] = useState(null)
+  const [notification, setNotification] = useState(null)
 
-  // Use the Effect hook to fetch data asynchronously on the initial render (Exercise 2.11)
+  // Load the initial contact database on page mount (Exercise 2.11)
   useEffect(() => {
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data)
+    personService
+      .getAll()
+      .then(initialPersons => {
+        setPersons(initialPersons)
       })
-  }, []) // Empty dependency array ensures this effect runs only once
+      .catch(error => {
+        showNotification('Failed to fetch data from server', 'error')
+      })
+  }, [])
 
-  // Sync state with name input changes
-  const handleNameChange = (event) => {
-    setNewName(event.target.value)
+  // Helper to show modern status/alert notifications
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type })
+    setTimeout(() => setNotification(null), 5000)
   }
 
-  // Sync state with number input changes
-  const handleNumberChange = (event) => {
-    setNewNumber(event.target.value)
-  }
+  const handleNameChange = (event) => setNewName(event.target.value)
+  const handleNumberChange = (event) => setNewNumber(event.target.value)
+  const handleFilterChange = (event) => setFilterQuery(event.target.value)
 
-  // Sync state with search input changes
-  const handleFilterChange = (event) => {
-    setFilterQuery(event.target.value)
-  }
-
-  // Handle adding/submitting a new contact locally
+  // Handle Form Submission: Create or Update (Exercises 2.12 & 2.15)
   const addPerson = (event) => {
     event.preventDefault()
 
-    // Check if the person is already registered
-    const duplicateCheck = persons.some(
+    // Search for existing entries matching the input name (case-insensitive)
+    const existingPerson = persons.find(
       (person) => person.name.toLowerCase() === newName.toLowerCase()
     )
 
-    if (duplicateCheck) {
-      setErrorMessage(`${newName} is already added to phonebook`)
-      // Automatically dismiss custom warning banner after 5 seconds
-      setTimeout(() => setErrorMessage(null), 5000)
+    if (existingPerson) {
+      // Exercise 2.15*: If the user already exists, offer to update the phone number
+      const confirmUpdate = window.confirm(
+        `${newName} is already added to the phonebook, replace the old number with a new one?`
+      )
+
+      if (confirmUpdate) {
+        const updatedPersonObject = { ...existingPerson, number: newNumber }
+
+        personService
+          .update(existingPerson.id, updatedPersonObject)
+          .then(returnedPerson => {
+            setPersons(persons.map(p => p.id === existingPerson.id ? returnedPerson : p))
+            showNotification(`Updated ${returnedPerson.name}'s phone number`)
+            setNewName('')
+            setNewNumber('')
+          })
+          .catch(error => {
+            // Handle error cases like if another user deleted the contact first
+            showNotification(
+              `Information of '${existingPerson.name}' has already been removed from server`,
+              'error'
+            )
+            setPersons(persons.filter(p => p.id !== existingPerson.id))
+          })
+      }
       return
     }
 
+    // Exercise 2.12: If it's a new name, perform an HTTP POST request
     const newPersonObject = {
       name: newName,
-      number: newNumber,
-      id: newName // Using the unique name as key identifier
+      number: newNumber
     }
 
-    setPersons(persons.concat(newPersonObject))
-    setNewName('')
-    setNewNumber('')
+    personService
+      .create(newPersonObject)
+      .then(returnedPerson => {
+        setPersons(persons.concat(returnedPerson))
+        showNotification(`Added ${returnedPerson.name}`)
+        setNewName('')
+        setNewNumber('')
+      })
+      .catch(error => {
+        showNotification('Failed to add new contact', 'error')
+      })
   }
 
-  // Filter persons dynamically based on search terms
+  // Handle Deletion (Exercise 2.14)
+  const deletePersonOf = (id, name) => {
+    const confirmDelete = window.confirm(`Delete ${name}?`)
+    
+    if (confirmDelete) {
+      personService
+        .remove(id)
+        .then(() => {
+          setPersons(persons.filter(p => p.id !== id))
+          showNotification(`Deleted ${name}`)
+        })
+        .catch(error => {
+          showNotification(`The contact '${name}' was already deleted from server`, 'error')
+          setPersons(persons.filter(p => p.id !== id))
+        })
+    }
+  }
+
+  // Filter contacts dynamically based on user input
   const personsToShow = filterQuery === ''
     ? persons
     : persons.filter(person => 
@@ -108,36 +185,21 @@ const App = () => {
       )
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '20px' }}>
+    <div style={{ fontFamily: 'sans-serif', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
       <h2>Phonebook</h2>
 
-      {/* Elegant Custom notification alert overlay instead of a standard breaking alert popup */}
-      {errorMessage && (
+      {/* Elegant Custom Status Notification Overlay */}
+      {notification && (
         <div style={{
-          background: '#fee2e2',
-          border: '1px solid #f87171',
-          color: '#991b1b',
+          background: notification.type === 'error' ? '#fee2e2' : '#ecfdf5',
+          border: `1px solid ${notification.type === 'error' ? '#f87171' : '#34d399'}`,
+          color: notification.type === 'error' ? '#991b1b' : '#065f46',
           padding: '12px',
           borderRadius: '6px',
           marginBottom: '20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          fontWeight: 'bold'
         }}>
-          <span>{errorMessage}</span>
-          <button 
-            onClick={() => setErrorMessage(null)} 
-            style={{ 
-              background: '#ef4444', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              cursor: 'pointer',
-              padding: '4px 8px'
-            }}
-          >
-            close
-          </button>
+          {notification.message}
         </div>
       )}
 
@@ -153,12 +215,11 @@ const App = () => {
       />
 
       <h3>Numbers</h3>
-      <Persons personsToShow={personsToShow} />
+      <Persons personsToShow={personsToShow} onDelete={deletePersonOf} />
     </div>
   )
 }
 
-// Render the application directly to the root element
 const container = document.getElementById('root')
 const root = createRoot(container)
 root.render(<App />)
