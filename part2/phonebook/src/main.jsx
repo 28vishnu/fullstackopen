@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import axios from 'axios'
 
-const baseUrl = 'http://localhost:3001/persons'
+// Using relative path so it automatically works in both development (via proxy) and production
+const baseUrl = '/api/persons'
 
 // --- BACKEND SERVICE MODULE ---
 const personService = {
